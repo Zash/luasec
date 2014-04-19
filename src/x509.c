@@ -146,10 +146,14 @@ static int push_x509_name(lua_State* L, X509_NAME *name, int encode)
 {
   int i;
   int n_entries;
+  char hash[9];
   ASN1_OBJECT *object;
   X509_NAME_ENTRY *entry;
   lua_newtable(L);
   n_entries = X509_NAME_entry_count(name);
+  sprintf(hash, "%08lx", X509_NAME_hash(name));
+  lua_pushstring(L, hash);
+  lua_setfield(L, -2, "hash");
   for (i = 0; i < n_entries; i++) {
     entry = X509_NAME_get_entry(name, i);
     object = X509_NAME_ENTRY_get_object(entry);
