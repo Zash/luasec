@@ -354,6 +354,25 @@ static int meth_pubkey(lua_State* L)
   return ret;
 }
 
+/*
+ * Get Signature Algorithm
+ */
+static int meth_sigalg(lua_State* L)
+{
+  X509* cert = lsec_checkx509(L, 1);
+  int pkey_nid = OBJ_obj2nid(cert->sig_alg->algorithm);
+
+  if (pkey_nid == NID_undef) {
+    lua_pushnil(L);
+    lua_pushstring(L,  "unable to find specified signature algorithm name.");
+    return 2;
+  }
+
+  lua_pushstring(L, OBJ_nid2ln(pkey_nid));
+  return 1;
+}
+
+
 /**
  * Compute the fingerprint.
  */
@@ -507,6 +526,7 @@ static luaL_Reg methods[] = {
   {"notafter",   meth_notafter},
   {"pem",        meth_pem},
   {"pubkey",     meth_pubkey},
+  {"sigalg",     meth_sigalg},
   {"serial",     meth_serial},
   {"subject",    meth_subject},
   {"validat",    meth_valid_at},
