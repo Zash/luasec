@@ -723,7 +723,10 @@ int lsec_getmode(lua_State *L, int idx)
 /**
  * Registre the module.
  */
-#if (LUA_VERSION_NUM == 501)
+#if (LUA_VERSION_NUM > 501)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 LSEC_API int luaopen_ssl_context(lua_State *L)
 {
   luaL_newmetatable(L, "SSL:DH:Registry");      /* Keep all DH callbacks */
@@ -740,21 +743,3 @@ LSEC_API int luaopen_ssl_context(lua_State *L)
   luaL_register(L, NULL, funcs);
   return 1;
 }
-#else
-LSEC_API int luaopen_ssl_context(lua_State *L)
-{
-  luaL_newmetatable(L, "SSL:DH:Registry");      /* Keep all DH callbacks */
-  luaL_newmetatable(L, "SSL:Verify:Registry");  /* Keep all verify flags */
-  luaL_newmetatable(L, "SSL:Context");
-  luaL_setfuncs(L, meta, 0);
-
-  /* Create __index metamethods for context */
-  luaL_newlib(L, meta_index);
-  lua_setfield(L, -2, "__index");
-
-  /* Return the module */
-  luaL_newlib(L, funcs);
-
-  return 1;
-}
-#endif

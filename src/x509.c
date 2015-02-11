@@ -566,7 +566,9 @@ static luaL_Reg funcs[] = {
 
 /*--------------------------------------------------------------------------*/
 
-#if (LUA_VERSION_NUM == 501)
+#if (LUA_VERSION_NUM > 501)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
 
 LSEC_API int luaopen_ssl_x509(lua_State *L)
 {
@@ -582,21 +584,3 @@ LSEC_API int luaopen_ssl_x509(lua_State *L)
 
   return 1;
 }
-
-#else
-
-LSEC_API int luaopen_ssl_x509(lua_State *L)
-{
-  /* Register the functions and tables */
-  luaL_newmetatable(L, "SSL:Certificate");
-  luaL_setfuncs(L, meta, 0);
-
-  luaL_newlib(L, methods);
-  lua_setfield(L, -2, "__index");
-
-  luaL_newlib(L, funcs);
-
-  return 1;
-}
-
-#endif

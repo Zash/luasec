@@ -816,7 +816,10 @@ static luaL_Reg funcs[] = {
 /**
  * Initialize modules.
  */
-#if (LUA_VERSION_NUM == 501)
+#if (LUA_VERSION_NUM > 501)
+#define luaL_register(L, N, R) luaL_setfuncs(L, R, 0)
+#endif
+
 LSEC_API int luaopen_ssl_core(lua_State *L)
 {
   /* Initialize SSL */
@@ -846,33 +849,3 @@ LSEC_API int luaopen_ssl_core(lua_State *L)
 
   return 1;
 }
-#else
-LSEC_API int luaopen_ssl_core(lua_State *L)
-{
-  /* Initialize SSL */
-  if (!SSL_library_init()) {
-    lua_pushstring(L, "unable to initialize SSL library");
-    lua_error(L);
-  }
-  OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-
-#if defined(WITH_LUASOCKET)
-  /* Initialize internal library */
-  socket_open();
-#endif
-
-  luaL_newmetatable(L, "SSL:SNI:Registry");
-
-  /* Register the functions and tables */
-  luaL_newmetatable(L, "SSL:Connection");
-  luaL_setfuncs(L, meta, 0);
-
-  luaL_newlib(L, methods);
-  lua_setfield(L, -2, "__index");
-
-  luaL_newlib(L, funcs);
-
-  return 1;
-}
-#endif
