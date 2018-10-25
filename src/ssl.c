@@ -836,6 +836,43 @@ static int meth_sethost(lua_State *L) {
   return 1;
 }
 
+const char *const hostflagnames[] = {
+  "always_check_subject",
+  "never_check_subject",
+  "no_wildcards",
+  "no_partial_wildcards",
+  "multi_label_wildcards",
+  "single_label_subdomains",
+  NULL
+};
+
+int hostflags[] = {
+  X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT,
+  X509_CHECK_FLAG_NEVER_CHECK_SUBJECT,
+  X509_CHECK_FLAG_NO_WILDCARDS,
+  X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS,
+  X509_CHECK_FLAG_MULTI_LABEL_WILDCARDS,
+  X509_CHECK_FLAG_SINGLE_LABEL_SUBDOMAINS,
+  0
+};
+
+static int meth_sethostflags(lua_State *L) {
+  p_ssl ssl = (p_ssl)luaL_checkudata(L, 1, "SSL:Connection");
+  X509_VERIFY_PARAM *param = SSL_get0_param(ssl->ssl);
+
+  int flags = 0;
+
+  for(int i = 2; lua_isstring(L, i); i++) {
+    int f = luaL_checkoption(L, i, NULL, hostflagnames);
+    flags |= hostflags[f];
+  }
+
+  X509_VERIFY_PARAM_set_hostflags(param, flags);
+  lua_pushboolean(L, 1);
+  return 1;
+}
+
+
 static int meth_copyright(lua_State *L)
 {
   lua_pushstring(L, "LuaSec 0.7 - Copyright (C) 2006-2018 Bruno Silvestre, UFG"
@@ -871,6 +908,7 @@ static luaL_Reg methods[] = {
   {"sni",                 meth_sni},
   {"want",                meth_want},
   {"sethost",             meth_sethost},
+  {"sethostflags",        meth_sethostflags},
   {NULL,                  NULL}
 };
 
