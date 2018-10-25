@@ -816,6 +816,26 @@ static int meth_getalpn(lua_State *L)
   return 1;
 }
 
+static int meth_sethost(lua_State *L) {
+  p_ssl ssl = (p_ssl)luaL_checkudata(L, 1, "SSL:Connection");
+  X509_VERIFY_PARAM *param = SSL_get0_param(ssl->ssl);
+  size_t l = 0;
+  const char *name = luaL_checklstring(L, 2, &l);
+  int ret = X509_VERIFY_PARAM_set1_host(param, name, l);
+
+  for(int i = 3; lua_isstring(L, i); i++) {
+    name = luaL_checklstring(L, i, &l);
+    ret = X509_VERIFY_PARAM_add1_host(param, name, l);
+
+    if(!ret) {
+      break;
+    }
+  }
+
+  lua_pushboolean(L, ret);
+  return 1;
+}
+
 static int meth_copyright(lua_State *L)
 {
   lua_pushstring(L, "LuaSec 0.7 - Copyright (C) 2006-2018 Bruno Silvestre, UFG"
@@ -850,6 +870,7 @@ static luaL_Reg methods[] = {
   {"settimeout",          meth_settimeout},
   {"sni",                 meth_sni},
   {"want",                meth_want},
+  {"sethost",             meth_sethost},
   {NULL,                  NULL}
 };
 
