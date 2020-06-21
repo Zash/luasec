@@ -666,6 +666,27 @@ static int meth_getpeerfinished(lua_State *L)
   return 1;
 }
 
+static int meth_export_keying_material(lua_State *L)
+{
+  p_ssl ssl = (p_ssl)luaL_checkudata(L, 1, "SSL:Connection");
+  size_t labellen;
+  const char *label = luaL_checklstring(L, 2, &labellen);
+  const int olen = luaL_checkinteger(L, 3);
+  luaL_Buffer b;
+
+  if (ssl->state != LSEC_STATE_CONNECTED) {
+    lua_pushnil(L);
+    lua_pushstring(L, "closed");
+    return 0;
+  }
+  char *buf = luaL_buffinitsize(L, &b, olen);
+  if (SSL_export_keying_material(ssl->ssl, buf, olen, label, labellen, NULL, 0, 0)) {
+    luaL_pushresultsize(&b, olen);
+    return 1;
+  }
+
+  return 0;
+}
 /**
  * Object information -- tostring metamethod
  */
@@ -869,6 +890,7 @@ static luaL_Reg methods[] = {
   {"getpeerchain",        meth_getpeerchain},
   {"getpeerverification", meth_getpeerverification},
   {"getpeerfinished",     meth_getpeerfinished},
+  {"exportskeyingmaterial", meth_export_keying_material},
   {"getsniname",          meth_getsniname},
   {"getstats",            meth_getstats},
   {"setstats",            meth_setstats},
