@@ -19,6 +19,7 @@
 #include <openssl/x509_vfy.h>
 #include <openssl/err.h>
 #include <openssl/dh.h>
+#include <openssl/ocsp.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -862,6 +863,14 @@ static int meth_tlsa(lua_State *L)
 }
 #endif
 
+static int meth_ocsp(lua_State *L)
+{
+  p_ssl ssl = (p_ssl)luaL_checkudata(L, 1, "SSL:Connection");
+  long ret = SSL_set_tlsext_status_type(ssl->ssl, TLSEXT_STATUSTYPE_ocsp);
+  lua_pushboolean(L, (ret > 0));
+  return 1;
+}
+
 /*---------------------------------------------------------------------------*/
 
 /**
@@ -890,6 +899,7 @@ static luaL_Reg methods[] = {
   {"setdane",             meth_dane},
   {"settlsa",             meth_tlsa},
 #endif
+  {"setocsp",             meth_ocsp},
   {NULL,                  NULL}
 };
 
