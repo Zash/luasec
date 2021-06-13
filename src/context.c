@@ -18,6 +18,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include <openssl/dh.h>
+#include <openssl/ocsp.h>
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -842,6 +843,53 @@ static int meth_set_verify_ext(lua_State *L)
   return 1;
 }
 
+static int ocsp_cb(SSL *ssl, void *unused)
+{
+  int ret = 0;
+  const unsigned char *b;
+  OCSP_RESPONSE *ocsp;
+
+  int len = SSL_get_tlsext_status_ocsp_resp(ssl, &b);
+
+  if(b == NULL) {
+    /*
+     * return -1 if cert has must-staple
+     */
+    return 1;
+  }
+
+  ocsp = d2i_OCSP_RESPONSE(NULL, &b, len);
+
+  switch(OCSP_response_status(ocsp)) {
+    case OCSP_RESPONSE_STATUS_SUCCESSFUL:
+      ret = 1;
+      break;
+
+    case OCSP_RESPONSE_STATUS_MALFORMEDREQUEST:
+    case OCSP_RESPONSE_STATUS_INTERNALERROR:
+      ret = -1;
+      break;
+
+    case OCSP_RESPONSE_STATUS_TRYLATER:
+    case OCSP_RESPONSE_STATUS_SIGREQUIRED:
+    case OCSP_RESPONSE_STATUS_UNAUTHORIZED:
+      ret = 0;
+      break;
+  }
+
+  OCSP_RESPONSE_free(ocsp);
+
+  return ret;
+}
+
+static int meth_set_ocsp(lua_State *L)
+{
+  SSL_CTX *ctx = lsec_checkcontext(L, 1);
+  SSL_CTX_set_tlsext_status_cb(ctx, ocsp_cb);
+  SSL_CTX_set_tlsext_status_arg(ctx, NULL);
+  return 0;
+}
+
 /**
  * Context metamethods.
  */
@@ -857,6 +905,7 @@ static luaL_Reg meta[] = {
  */
 static luaL_Reg meta_index[] = {
   {"setverifyext", meth_set_verify_ext},
+  {"setocspcb",    meth_set_ocsp},
   {NULL, NULL}
 };
 
