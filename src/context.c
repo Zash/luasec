@@ -858,6 +858,12 @@ static int ocsp_cb(SSL *ssl, void *unused)
     return 1;
   }
 
+  /*
+   * TODO check that the ocsp response matches the cert
+  X509 *cert = SSL_get_peer_certificate(ssl);
+  if (OCSP_RESPID_match(respid, cert)) {}
+   */
+
   ocsp = d2i_OCSP_RESPONSE(NULL, &b, len);
 
   switch(OCSP_response_status(ocsp)) {
